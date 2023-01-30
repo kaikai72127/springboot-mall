@@ -1,5 +1,6 @@
 package com.huangkelly.springbootmall.controller;
 
+import com.huangkelly.springbootmall.constant.ProductCategory;
 import com.huangkelly.springbootmall.dto.ProductRequest;
 import com.huangkelly.springbootmall.model.Product;
 import com.huangkelly.springbootmall.service.ProductService;
@@ -16,10 +17,17 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+    
+    
+    
 
     @GetMapping("/products")
-    public ResponseEntity<List<Product>> getProducts(){
-        List<Product> productList = productService.getProducts();
+    public ResponseEntity<List<Product>> getProducts(
+    		@RequestParam(required = false) ProductCategory category,
+    		@RequestParam(required = false) String search
+    		
+    		){
+        List<Product> productList = productService.getProducts(category,search);
 
         return ResponseEntity.status(HttpStatus.OK).body(productList);
     }
