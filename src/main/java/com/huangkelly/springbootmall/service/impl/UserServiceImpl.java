@@ -1,6 +1,7 @@
 package com.huangkelly.springbootmall.service.impl;
 
 
+import com.huangkelly.springbootmall.dto.UserLoginRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,23 @@ public class UserServiceImpl implements UserService {
 		//創建帳號
 		return userDao.createUser(userRegisterRequest);
 	}
-	
-	
+
+	@Override
+	public User login(UserLoginRequest userLoginRequest) {
+
+		User user = userDao.getUserByEmail(userLoginRequest.getEmail());
+
+		if(user == null){
+			log.warn("該email {} 尚未註冊",userLoginRequest.getEmail());
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		}
+
+		if(user.getPassword().equals(userLoginRequest.getPassword())){
+			return user;
+		}else {
+			log.warn("email {} 的密碼不正確",userLoginRequest.getEmail());
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		}
+
+	}
 }

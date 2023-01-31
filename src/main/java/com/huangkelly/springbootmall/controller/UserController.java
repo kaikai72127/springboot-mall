@@ -2,6 +2,7 @@ package com.huangkelly.springbootmall.controller;
 
 import javax.validation.Valid;
 
+import com.huangkelly.springbootmall.dto.UserLoginRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,4 +29,13 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(user);
 		
 	}
+
+	@PostMapping("/users/login")
+	public ResponseEntity<User> login(@RequestBody @Valid UserLoginRequest userLoginRequest){
+
+		User user = userService.login(userLoginRequest);
+
+		return ResponseEntity.status(HttpStatus.OK).body(user);
+	}
+
 }
