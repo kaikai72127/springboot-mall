@@ -8,7 +8,6 @@ import com.huangkelly.springbootmall.service.ProductService;
 import com.huangkelly.springbootmall.util.Page;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

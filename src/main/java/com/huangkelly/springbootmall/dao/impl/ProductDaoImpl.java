@@ -1,6 +1,5 @@
 package com.huangkelly.springbootmall.dao.impl;
 
-import com.fasterxml.jackson.annotation.Nulls;
 import com.huangkelly.springbootmall.dao.ProductDao;
 import com.huangkelly.springbootmall.dto.ProductQueryParams;
 import com.huangkelly.springbootmall.dto.ProductRequest;
