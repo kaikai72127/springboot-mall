@@ -33,16 +33,7 @@ public class ProductDaoImpl implements ProductDao {
     	Map<String, Object> map = new HashMap<>();
     	
     	//查詢條件
-    	if(productQueryParams.getCategory() != null) {
-    		sql = sql +" AND category = :category";
-    		map.put("category", productQueryParams.getCategory().name());
-    		
-    	}
-    	
-    	if(productQueryParams.getSearch() != null) {
-    		sql = sql+" AND product_name LIKE :search";
-    		map.put("search", "%"+productQueryParams.getSearch()+"%");
-    	}
+    	sql=addFilteringStr(sql, map, productQueryParams);
     	
     	Integer total = namedParameterJdbcTemplate.queryForObject(sql, map,Integer.class);
     	
@@ -58,15 +49,7 @@ public class ProductDaoImpl implements ProductDao {
         Map<String, Object> map = new HashMap<>();
 
         //查詢條件
-        if(productQueryParams.getCategory() != null) {
-        	sql = sql+" AND category =:category";
-        	map.put("category",productQueryParams.getCategory().name());
-        }
-        
-        if(productQueryParams.getSearch() != null) {
-        	sql = sql+" AND product_name LIKE :search";
-        	map.put("search", "%"+productQueryParams.getSearch()+"%");
-        }
+    	sql=addFilteringStr(sql, map, productQueryParams);
         
         //排序 因為已經有預設,不會是null,所以沒有再另外判斷是否為null
         sql = sql +" ORDER BY "+productQueryParams.getOrderBy()+" "+productQueryParams.getSort();
@@ -159,4 +142,25 @@ public class ProductDaoImpl implements ProductDao {
 
         namedParameterJdbcTemplate.update(sql,map);
     }
+    
+    //軟體的價值在於重複使用 重複的程式抽出來重複利用
+    
+    private String addFilteringStr(String sql,Map<String, Object> map,ProductQueryParams productQueryParams) {
+    	
+    	if(productQueryParams.getCategory() != null) {
+    		sql = sql +" AND category = :category";
+    		map.put("category", productQueryParams.getCategory().name());
+    		
+    	}
+    	
+    	if(productQueryParams.getSearch() != null) {
+    		sql = sql+" AND product_name LIKE :search";
+    		map.put("search", "%"+productQueryParams.getSearch()+"%");
+    	}
+    	
+    	return sql;
+    	
+    }
+    
+    
 }
