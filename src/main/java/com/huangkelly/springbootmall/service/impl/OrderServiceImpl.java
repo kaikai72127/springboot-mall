@@ -2,15 +2,22 @@ package com.huangkelly.springbootmall.service.impl;
 
 import com.huangkelly.springbootmall.dao.OrderDao;
 import com.huangkelly.springbootmall.dao.ProductDao;
+import com.huangkelly.springbootmall.dao.UserDao;
 import com.huangkelly.springbootmall.dto.BuyItem;
 import com.huangkelly.springbootmall.dto.CreateOrderRequest;
 import com.huangkelly.springbootmall.model.Order;
 import com.huangkelly.springbootmall.model.OrderItem;
 import com.huangkelly.springbootmall.model.Product;
+import com.huangkelly.springbootmall.model.User;
 import com.huangkelly.springbootmall.service.OrderService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,51 +25,76 @@ import java.util.List;
 @Component
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private OrderDao orderDao;
+	private final static Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
 
-    @Autowired
-    private ProductDao productDao;
+	@Autowired
+	private OrderDao orderDao;
 
-    @Override
-    public Order getOrderById(Integer orderId) {
+	@Autowired
+	private ProductDao productDao;
 
-        Order order = orderDao.getOrderById(orderId);
+	@Autowired
+	private UserDao userDao;
 
-        List<OrderItem> orderItemList = orderDao.getOrderItemsByOrderId(orderId);
+	@Override
+	public Order getOrderById(Integer orderId) {
 
-        order.setOrderItemList(orderItemList);
+		Order order = orderDao.getOrderById(orderId);
 
-        return order;
-    }
+		List<OrderItem> orderItemList = orderDao.getOrderItemsByOrderId(orderId);
 
-    @Transactional
-    @Override
-    public Integer createOrder(Integer userId, CreateOrderRequest createOrderRequest) {
-       int totalAmount =0;
-       List<OrderItem> orderItemList = new ArrayList<>();
+		order.setOrderItemList(orderItemList);
 
-       for(BuyItem buyItem:createOrderRequest.getBuyItemList()){
-           Product product = productDao.getProductById(buyItem.getProductId());
+		return order;
+	}
 
-           //計算總價錢
-           int amount = buyItem.getQuantity()*product.getPrice();
-           totalAmount =totalAmount+amount;
+	@Transactional
+	@Override
+	public Integer createOrder(Integer userId, CreateOrderRequest createOrderRequest) {
+		//檢查user是否存在
+		User user = userDao.getUserById(userId);
+		
+		if(user == null) {
+			log.warn("該userId {} 不存在", userId);
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		}
+		
+		int totalAmount = 0;
+		List<OrderItem> orderItemList = new ArrayList<>();
 
-           //轉換BuyItem to OrderItem
-           OrderItem orderItem = new OrderItem();
-           orderItem.setProductId(buyItem.getProductId());
-           orderItem.setQuantity(buyItem.getQuantity());
-           orderItem.setAmount(amount);
+		for (BuyItem buyItem : createOrderRequest.getBuyItemList()) {
+			Product product = productDao.getProductById(buyItem.getProductId());
 
-           orderItemList.add(orderItem);
-       }
+			//檢查product 是否存在 庫存是否足夠
+			if(product == null) {
+				log.warn("商品 {} 不存在",buyItem.getProductId());
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+			}else if(product.getStock() < buyItem.getQuantity()) {
+				log.warn("商品 {} 庫存數量不足，無法購買，剩餘庫存 {} ，欲購買數量 {}",buyItem.getProductId(),product.getStock(),buyItem.getQuantity());
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+			}
+			
+			//扣除商品庫存
+			productDao.updateStock(product.getProductId(),product.getStock()-buyItem.getQuantity());
+			
+			// 計算總價錢
+			int amount = buyItem.getQuantity() * product.getPrice();
+			totalAmount = totalAmount + amount;
 
-        //創建訂單
-        Integer orderId = orderDao.createOrder(userId,totalAmount);
+			// 轉換BuyItem to OrderItem
+			OrderItem orderItem = new OrderItem();
+			orderItem.setProductId(buyItem.getProductId());
+			orderItem.setQuantity(buyItem.getQuantity());
+			orderItem.setAmount(amount);
 
-        orderDao.createOrderItems(orderId,orderItemList);
+			orderItemList.add(orderItem);
+		}
 
-        return orderId;
-    }
+		// 創建訂單
+		Integer orderId = orderDao.createOrder(userId, totalAmount);
+
+		orderDao.createOrderItems(orderId, orderItemList);
+
+		return orderId;
+	}
 }
